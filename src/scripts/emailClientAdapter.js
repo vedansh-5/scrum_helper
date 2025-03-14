@@ -114,6 +114,28 @@ class EmailClientAdapter {
             return false;
         }
     }
+
+    retryInjection(element, content, eventType, maxRetries = 3) {
+        let attempts = 0;
+        
+        const tryInject = () => {
+            if (attempts >= maxRetries) {
+                console.error('Max retry attempts reached');
+                return false;
+            }
+            
+            attempts++;
+            console.log(`Injection attempt ${attempts}`);
+            
+            if (this.injectContent(element, content, eventType)) {
+                return true;
+            }
+            
+            setTimeout(tryInject, 1000);
+        };
+        
+        return tryInject();
+    }
 }
 
 // Create global instance
