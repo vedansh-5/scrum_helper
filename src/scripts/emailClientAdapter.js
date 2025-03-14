@@ -23,23 +23,25 @@ class EmailClientAdapter {
             },
             'outlook': {
                 selectors: {
-                    body: '[role="textbox"][aria-label="Message body"]',
+                    body: 'div[role="textbox"][contenteditable="true"]',
                     subject: 'input[aria-label="Add a subject"]'
                 },
                 eventTypes: {
                     contentChange: 'input',
                     subjectChange: 'change'
-                }
+                },
+                injectMethod: 'focusAndPaste'  // Custom injection method
             },
             'yahoo': {
                 selectors: {
-                    body: '.compose-editor [contenteditable="true"]',
+                    body: '#editor-container [contenteditable="true"]',
                     subject: 'input[placeholder="Subject"]'
                 },
                 eventTypes: {
                     contentChange: 'input',
                     subjectChange: 'change'
-                }
+                },
+                injectMethod: 'setContent'  // Custom injection method
             }
         };
     }
@@ -66,10 +68,51 @@ class EmailClientAdapter {
     }
 
     injectContent(element, content, eventType) {
-        if (!element) return false;
-        element.innerHTML = content;
-        element.dispatchEvent(new Event(eventType, { bubbles: true }));
-        return true;
+        if (!element) {
+            console.log('No element found for injection');
+            return false;
+        }
+        const clientType = this.detectClient();
+        console.log('Injecting content for client:', clientType);
+        try {
+            switch(this.clientConfigs[clientType]?.injectMethod) {
+                case 'focusAndPaste':
+                    // Special handling for Outlook
+                    element.focus();
+                    element.innerHTML = content;
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    element.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Simulate keyboard input
+                    element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                    element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                    break;
+
+                case 'setContent':
+                    // Special handling for Yahoo
+                    element.innerHTML = content;
+                    element.focus();
+                    // Force Yahoo's editor to recognize the change
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(element);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    element.dispatchEvent(new Event('change', { bubbles: true }));
+                    break;
+
+                default:
+                    // Default handling for Google clients
+                    element.innerHTML = content;
+                    element.dispatchEvent(new Event(eventType, { bubbles: true }));
+            }
+            
+            console.log('Content injection successful');
+            return true;
+        } catch (error) {
+            console.error('Content injection failed:', error);
+            return false;
+        }
     }
 }
 
