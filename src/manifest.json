@@ -19,23 +19,18 @@
       "matches": [
         "*://groups.google.com/forum/*", 
         "*://groups.google.com/g/*",
-        "*://mail.google.com/*",         // Gmail support
-        "*://outlook.live.com/*",        // Outlook personal
-        "*://outlook.office.com/*",      // Outlook business
-        "*://mail.yahoo.com/*"          // Yahoo Mail
+        "*://mail.google.com/*",         
+        "*://outlook.live.com/*",        
+        "*://outlook.office.com/*",      
+        "*://mail.yahoo.com/*"          
       ],
-      "js": ["scripts/jquery-3.2.1.min.js", "scripts/scrumHelper.js",  "scripts/emailClientAdapter.js"] // New adapter file
+      "js": ["scripts/jquery-3.2.1.min.js", "scripts/scrumHelper.js",  "scripts/emailClientAdapter.js"] 
     }
   ],
 
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
   },
-<<<<<<< HEAD
-  "optional_host_permissions": ["https://*/*", "http://*/*", "<all_urls>"],
-
-  "permissions": ["tabs", "storage", "activeTab", "notifications"]
-=======
   "permissions": [
     "tabs",
     "storage",
@@ -50,5 +45,4 @@
     "*://*.yahoo.com/*",
     "https://api.github.com/*"
   ]
->>>>>>> 348529b (google groups and gmail working with subject loaded on other clients)
 }
