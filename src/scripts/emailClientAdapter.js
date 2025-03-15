@@ -73,7 +73,6 @@ class EmailClientAdapter {
             return false;
         }
         const clientType = this.detectClient();
-        console.log('Injecting content for client:', clientType);
         try {
             switch(this.clientConfigs[clientType]?.injectMethod) {
                 case 'focusAndPaste':
@@ -106,8 +105,6 @@ class EmailClientAdapter {
                     element.innerHTML = content;
                     element.dispatchEvent(new Event(eventType, { bubbles: true }));
             }
-            
-            console.log('Content injection successful');
             return true;
         } catch (error) {
             console.error('Content injection failed:', error);
