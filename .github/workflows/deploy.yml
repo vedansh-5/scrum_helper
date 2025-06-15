@@ -1,0 +1,67 @@
+name: Deploy to Chrome Web Store
+
+on:
+    push:
+        tags:
+            - 'v*' #Triggers on version tags like v2.0
+    workflow_dispatch:
+        inputs:
+            version_type:
+                description: 'Version bump type'
+                required: true
+                default: 'patch'
+                type: choice
+                options:
+                    - patch
+                    - minor
+                    - major
+
+jobs:
+    deploy:
+        runs-on: ubuntu-lates
+    
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '18'
+            
+            - name: Install deployment dependencies
+              run: |
+                cd deploy
+                npm install
+
+            - name: Bump version (if manual trigger)
+              if: github.event_name == 'workflow_dispatch'
+              run: |
+                cd deploy
+                node version-bump.js ${{ github.event.inputs.version_type }}
+
+            - name: Build extension
+              run: |
+                cd deploy
+                npm run build
+
+            - name: Deploy to Chrome Web Store
+              env:
+                CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+                CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+                CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+                CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+              run: |
+                cd deploy
+                npm run deploy
+
+            - name: Create Github Release
+              if: github.event_name == 'workflow_dispatch'
+              uses: actions/create-release@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets. GITHUB_TOKEN }}
+              with:
+                tag_name: v${{ steps.version.outputs.version }}
+                release_name: Release v${{ steps.version.outputs.version }}
+                draft: false
+                prerelease: false
