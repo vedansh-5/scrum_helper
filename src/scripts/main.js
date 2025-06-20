@@ -10,71 +10,69 @@ let showOpenLabelElement = document.getElementById('showOpenLabel');
 let userReasonElement = document.getElementById('userReason');
 
 function handleBodyOnLoad() {
-	chrome.storage.local.get(
-		[
-			'githubUsername',
-			'projectName',
-			'enableToggle',
-			'startingDate',
-			'endingDate',
-			'showOpenLabel',
-			'showClosedLabel',
-			'userReason',
-			'lastWeekContribution',
-			'yesterdayContribution',
-			'cacheInput',
-		],
-		(items) => {
-			if (items.githubUsername) {
-				githubUsernameElement.value = items.githubUsername;
-			}
-			if (items.projectName) {
-				projectNameElement.value = items.projectName;
-			}
-			if (items.cacheInput) {
-				cacheInputElement.value = items.cacheInput;
-			}
-			if (items.enableToggle) {
-				enableToggleElement.checked = items.enableToggle;
-			} else if (items.enableToggle !== false) {
-				// undefined
-				enableToggleElement.checked = true;
-				handleEnableChange();
-			}
-			if (items.endingDate) {
-				endingDateElement.value = items.endingDate;
-			}
-			if (items.startingDate) {
-				startingDateElement.value = items.startingDate;
-			}
-			if (items.showOpenLabel) {
-				showOpenLabelElement.checked = items.showOpenLabel;
-			} else if (items.showOpenLabel !== false) {
-				// undefined
-				showOpenLabelElement.checked = true;
-				handleOpenLabelChange();
-			}
-			if (items.userReason) {
-				userReasonElement.value = items.userReason;
-			}
-			if (items.lastWeekContribution) {
-				lastWeekContributionElement.checked = items.lastWeekContribution;
-				handleLastWeekContributionChange();
-			}
-			 else if (items.lastWeekContribution !== false) {
-				lastWeekContributionElement.checked = true;
-				handleLastWeekContributionChange();
-			}
-			if (items.yesterdayContribution) {
-				yesterdayContributionElement.checked = items.yesterdayContribution;
-				handleYesterdayContributionChange();
-			}
-			 else if (items.yesterdayContribution !== false) {
-				yesterdayContributionElement.checked = true;
-				handleYesterdayContributionChange();
-			}
-		},
-	);
+    browserAPI.storage.local.get(
+        [
+            'githubUsername',
+            'projectName',
+            'enableToggle',
+            'startingDate',
+            'endingDate',
+            'showOpenLabel',
+            'showClosedLabel',
+            'userReason',
+            'lastWeekContribution',
+            'yesterdayContribution',
+            'cacheInput',
+        ]).then((items) => { // <--- CHANGE HERE
+            if (items.githubUsername) {
+                githubUsernameElement.value = items.githubUsername;
+            }
+            if (items.projectName) {
+                projectNameElement.value = items.projectName;
+            }
+            if (items.cacheInput) {
+                cacheInputElement.value = items.cacheInput;
+            }
+            if (items.enableToggle) {
+                enableToggleElement.checked = items.enableToggle;
+            } else if (items.enableToggle !== false) {
+                // undefined
+                enableToggleElement.checked = true;
+                handleEnableChange();
+            }
+            if (items.endingDate) {
+                endingDateElement.value = items.endingDate;
+            }
+            if (items.startingDate) {
+                startingDateElement.value = items.startingDate;
+            }
+            if (items.showOpenLabel) {
+                showOpenLabelElement.checked = items.showOpenLabel;
+            } else if (items.showOpenLabel !== false) {
+                // undefined
+                showOpenLabelElement.checked = true;
+                handleOpenLabelChange();
+            }
+            if (items.userReason) {
+                userReasonElement.value = items.userReason;
+            }
+            if (items.lastWeekContribution) {
+                lastWeekContributionElement.checked = items.lastWeekContribution;
+                handleLastWeekContributionChange();
+            }
+             else if (items.lastWeekContribution !== false) {
+                lastWeekContributionElement.checked = true;
+                handleLastWeekContributionChange();
+            }
+            if (items.yesterdayContribution) {
+                yesterdayContributionElement.checked = items.yesterdayContribution;
+                handleYesterdayContributionChange();
+            }
+             else if (items.yesterdayContribution !== false) {
+                yesterdayContributionElement.checked = true;
+                handleYesterdayContributionChange();
+            }
+        }); // <--- CHANGE HERE
 }
 
 document.getElementById('refreshCache').addEventListener('click', async (e) => {
@@ -83,14 +81,14 @@ document.getElementById('refreshCache').addEventListener('click', async (e) => {
     button.disabled = true;
     
     try {
-        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-        await chrome.tabs.sendMessage(tabs[0].id, {
+        const tabs = await browserAPI.tabs.query({active: true, currentWindow: true}); // <--- CHANGE HERE
+        await browserAPI.tabs.sendMessage(tabs[0].id, { // <--- CHANGE HERE
             action: 'forceRefresh',
             timestamp: Date.now()
         });
         
         // Reload the active tab to re-inject content
-        chrome.tabs.reload(tabs[0].id);
+        browserAPI.tabs.reload(tabs[0].id); // <--- CHANGE HERE
         
         Materialize.toast({html: 'Data refreshed successfully!', classes: 'green'});
     } catch (err) {
@@ -105,15 +103,15 @@ document.getElementById('refreshCache').addEventListener('click', async (e) => {
 
 function handleEnableChange() {
 	let value = enableToggleElement.checked;
-	chrome.storage.local.set({ enableToggle: value });
+	browserAPI.storage.local.set({ enableToggle: value });
 }
 function handleStartingDateChange() {
 	let value = startingDateElement.value;
-	chrome.storage.local.set({ startingDate: value });
+	browserAPI.storage.local.set({ startingDate: value });
 }
 function handleEndingDateChange() {
 	let value = endingDateElement.value;
-	chrome.storage.local.set({ endingDate: value });
+	browserAPI.storage.local.set({ endingDate: value });
 }
 function handleLastWeekContributionChange() {
 	let value = lastWeekContributionElement.checked;
@@ -134,7 +132,7 @@ function handleLastWeekContributionChange() {
 			labelElement.classList.remove("selectedLabel");
 	}
 	
-	chrome.storage.local.set({ lastWeekContribution: value });
+	browserAPI.storage.local.set({ lastWeekContribution: value });
 }
 
 function handleYesterdayContributionChange() {
@@ -156,7 +154,7 @@ function handleYesterdayContributionChange() {
 		labelElement.classList.add("unselectedLabel");
 		labelElement.classList.remove("selectedLabel");
 	}
-	chrome.storage.local.set({ yesterdayContribution: value });
+	browserAPI.storage.local.set({ yesterdayContribution: value });
 }
 
 function getLastWeek() {
@@ -204,15 +202,15 @@ function getToday() {
 
 function handleGithubUsernameChange() {
 	let value = githubUsernameElement.value;
-	chrome.storage.local.set({ githubUsername: value });
+	browserAPI.storage.local.set({ githubUsername: value });
 }
 function handleProjectNameChange() {
 	let value = projectNameElement.value;
-	chrome.storage.local.set({ projectName: value });
+	browserAPI.storage.local.set({ projectName: value });
 }
 function handleCacheInputChange() {
 	let value = cacheInputElement.value;
-	chrome.storage.local.set({ cacheInput: value });
+	browserAPI.storage.local.set({ cacheInput: value });
 }
 function handleOpenLabelChange() {
 	let value = showOpenLabelElement.checked;
@@ -226,12 +224,12 @@ function handleOpenLabelChange() {
 			labelElement.classList.remove("selectedLabel");
 	}
 
-	chrome.storage.local.set({ showOpenLabel: value });
+	browserAPI.storage.local.set({ showOpenLabel: value });
 }
 
 function handleUserReasonChange() {
 	let value = userReasonElement.value;
-	chrome.storage.local.set({ userReason: value });
+	browserAPI.storage.local.set({ userReason: value });
 }
 enableToggleElement.addEventListener('change', handleEnableChange);
 githubUsernameElement.addEventListener('keyup', handleGithubUsernameChange);

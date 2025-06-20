@@ -37,9 +37,9 @@ function allIncluded(outputTarget = 'email') {
 		'<div style="vertical-align:middle;display: inline-block;padding: 0px 4px;font-size:9px;font-weight: 600;color: #fff;text-align: center;background-color: #2cbe4e;border-radius: 3px;line-height: 12px;margin-bottom: 2px;"  class="State State--green">open</div>';
 
 	// let linkStyle = '';
-	function getChromeData() {
-		console.log("Getting Chrome data for context:", outputTarget);
-		chrome.storage.local.get(
+	function getBrowserData() {
+		console.log("Getting Browser data for context:", outputTarget);
+		browserAPI.storage.local.get(
 			[
 				'githubUsername',
 				'projectName',
@@ -53,11 +53,10 @@ function allIncluded(outputTarget = 'email') {
 				'userReason',
         		'githubCache',
 				'cacheInput'
-			],
-			(items) => {
-					console.log("Storage items received:", items);
-					
-					if (items.lastWeekContribution) {
+			]).then((items) => { // <--- CHANGE HERE: Use .then()
+                    console.log("Storage items received:", items);
+                    
+                    if (items.lastWeekContribution) {
 						lastWeekContribution = true;
 						handleLastWeekContributionChange();
 					}
@@ -127,10 +126,9 @@ function allIncluded(outputTarget = 'email') {
 						githubCache.timestamp = items.githubCache.timestamp;
 						log('Restored cache from storage');
 					}
-				},
-			);
+				}); // <--- CHANGE HERE
 		}
-		getChromeData();
+		getBrowserData();
 
 		function handleLastWeekContributionChange() {
 			endingDate = getToday();
@@ -208,12 +206,10 @@ function allIncluded(outputTarget = 'email') {
 		};
 
 		async function getCacheTTL() {
-			return new Promise((resolve) =>{
-				chrome.storage.local.get(['cacheInput'], function(result) {
-					const ttlMinutes = result.cacheInput || 10;
-					resolve(ttlMinutes * 60 * 1000);
-				});
-			});
+			// This is a much cleaner way to write this with async/await
+			const result = await browserAPI.storage.local.get(['cacheInput']);
+            const ttlMinutes = result.cacheInput || 10;
+            return ttlMinutes * 60 * 1000;
 		}
 		
 		
@@ -231,17 +227,17 @@ function allIncluded(outputTarget = 'email') {
 			});
 			
 			return new Promise((resolve) => {
-				chrome.storage.local.set({ githubCache: cacheData }, () => {
-					if(chrome.runtime.lastError) {
-						logError('Storage save failed: ', chrome.runtime.lastError);
-						resolve(false);
-					} else {
-						log('Cache saved successfuly');
-						githubCache.data = data;
-						githubCache.subject = subject;
-						resolve(true);
-					}
-				});
+				browserAPI.storage.local.set({ githubCache: cacheData }).then(() => { // <--- CHANGE HERE
+                    if(browserAPI.runtime.lastError) {
+                        logError('Storage save failed: ', browserAPI.runtime.lastError);
+                        resolve(false);
+                    } else {
+                        log('Cache saved successfuly');
+                        githubCache.data = data;
+                        githubCache.subject = subject;
+                        resolve(true);
+                    }
+                });
 			});
 		}
 
@@ -249,20 +245,20 @@ function allIncluded(outputTarget = 'email') {
 			log('Loading cache from storage');
 			return new Promise(async (resolve) => {
 				const currentTTL = await getCacheTTL();
-				chrome.storage.local.get('githubCache', (result) => {
-					const cache = result.githubCache;
-					if (!cache) {
-						log('No cache found in storage');
-						resolve(false);
-						return;
-					}
-					const isCacheExpired = (Date.now() - cache.timestamp) > currentTTL;
-					if(isCacheExpired){
-						log('Cached data is expired');
-						resolve(false);
-						return;
-					}
-					log('Found valid cache:', {
+				browserAPI.storage.local.get('githubCache').then((result) => { // <--- CHANGE HERE
+                    const cache = result.githubCache;
+                    if (!cache) {
+                        log('No cache found in storage');
+                        resolve(false);
+                        return;
+                    }
+                    const isCacheExpired = (Date.now() - cache.timestamp) > currentTTL;
+                    if(isCacheExpired){
+                        log('Cached data is expired');
+                        resolve(false);
+                        return;
+                    }
+                    log('Found valid cache:', {
 						cacheKey: cache.cacheKey,
 						age: `${((Date.now() - cache.timestamp) / 1000 / 60).toFixed(1)} minutes` ,
 					});
@@ -388,16 +384,14 @@ function allIncluded(outputTarget = 'email') {
 				isFetching: githubCache.fetching,
 				queueLength: githubCache.queue.length
 			});
-			const storageData = await new Promise(resolve => {
-				chrome.storage.local.get('githubCache', resolve);
-			});
-			log('Storage Status:', {
-				hasStoredData: !!storageData.githubCache,
-				storedCacheKey: storageData.githubCache?.cacheKey,
-				storageAge: storageData.githubCache?.timestamp ? 
+			const storageData = await browserAPI.storage.local.get('githubCache'); // <--- CHANGE HERE
+            log('Storage Status:', {
+                hasStoredData: !!storageData.githubCache,
+                storedCacheKey: storageData.githubCache?.cacheKey,
+                storageAge: storageData.githubCache?.timestamp ? 
 					`${((Date.now() - storageData.githubCache.timestamp) / 1000 / 60).toFixed(1)} minutes` : 
 					'no data'
-			});
+            });
 		}
 		verifyCacheStatus();
 
@@ -796,7 +790,7 @@ window.generateScrumReport = function() {
     allIncluded('popup');
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if(request.action === 'forceRefresh') {
         forceGithubDataRefresh()
             .then(result => sendResponse(result)).catch(err => {

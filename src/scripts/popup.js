@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const settingsIcon = document.getElementById('settingsIcon');
     const body = document.body;
 
-    chrome.storage.local.get(['darkMode'], function(result) {
+    browserAPI.storage.local.get(['darkMode'], function(result) {
         if(result.darkMode) {
             body.classList.add('dark-mode');
             darkModeToggle.src = 'icons/light-mode.png';
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
     darkModeToggle.addEventListener('click', function() {
         body.classList.toggle('dark-mode');
         const isDarkMode = body.classList.contains('dark-mode');
-        chrome.storage.local.set({ darkMode: isDarkMode });
+        browserAPI.storage.local.set({ darkMode: isDarkMode });
         this.src = isDarkMode ? 'icons/light-mode.png' : 'icons/night-mode.png';
         const settingsIcon = document.getElementById('settingsIcon');
         if(settingsIcon){
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    chrome.storage.local.get(['enableToggle'], (items) => {
+    browserAPI.storage.local.get(['enableToggle']).then((items) => { // <--- CHANGE HERE
         const enableToggle = items.enableToggle !== false;
         updateContentState(enableToggle);
         if(!enableToggle){
@@ -148,9 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         initializePopup();
-    })
+    });
 
-    chrome.storage.onChanged.addListener((changes, namespace) => {
+    browserAPI.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes.enableToggle) {
             updateContentState(changes.enableToggle.newValue);
             if (changes.enableToggle.newValue) {
@@ -212,18 +212,18 @@ document.addEventListener('DOMContentLoaded', function() {
             startDateInput.disabled = false;
             endDateInput.disabled = false;
             
-            chrome.storage.local.set({
+            browserAPI.storage.local.set({
                 lastWeekContribution: false,
                 yesterdayContribution: false,
                 selectedTimeframe: null
             });
         });
 
-        chrome.storage.local.get([
+        browserAPI.storage.local.get([ // <--- CHANGE HERE
             'selectedTimeframe', 
             'lastWeekContribution', 
             'yesterdayContribution'
-        ], (items) => {
+        ]).then((items) => {
             console.log('Restoring state:', items);
             
             if (!items.selectedTimeframe) {
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
                 startDateInput.disabled = endDateInput.disabled = true;
     
-                chrome.storage.local.set({
+                browserAPI.storage.local.set({
                     startingDate: startDateInput.value,
                     endingDate: endDateInput.value,
                     lastWeekContribution: items.selectedTimeframe === 'lastWeekContribution',
@@ -309,7 +309,7 @@ document.querySelectorAll('input[name="timeframe"]').forEach(radio => {
             startDateInput.disabled = false;
             endDateInput.disabled = false;
             
-            chrome.storage.local.set({
+            browserAPI.storage.local.set({
                 lastWeekContribution: false,
                 yesterdayContribution: false,
                 selectedTimeframe: null
@@ -336,7 +336,7 @@ document.getElementById('refreshCache').addEventListener('click', async function
     try {
         // Clear local cache
         await new Promise(resolve => {
-            chrome.storage.local.remove('githubCache', resolve);
+            browserAPI.storage.local.remove('githubCache', resolve);
         });
         
         // Clear the scrum report
@@ -381,14 +381,14 @@ function toggleRadio(radio) {
 
     startDateInput.disabled = endDateInput.disabled = true;
 
-    chrome.storage.local.set({
+    browserAPI.storage.local.set({
         startingDate: startDateInput.value,
         endingDate: endDateInput.value,
         lastWeekContribution: radio.id === 'lastWeekContribution',
         yesterdayContribution: radio.id === 'yesterdayContribution',
         selectedTimeframe: radio.id,
         githubCache: null // Clear cache to force new fetch
-    }, () => {
+    }).then(() => { // <--- CHANGE HERE
         console.log('State saved, dates:', {
             start: startDateInput.value,
             end: endDateInput.value,
@@ -399,7 +399,7 @@ function toggleRadio(radio) {
 
 const cacheInput = document.getElementById('cacheInput');
 if (cacheInput) {
-    chrome.storage.local.get(['cacheInput'], function(result) {
+    browserAPI.storage.local.get(['cacheInput'], function(result) {
         if (result.cacheInput) {
             cacheInput.value = result.cacheInput;
         } else {
@@ -421,7 +421,7 @@ if (cacheInput) {
             this.style.borderColor = '#10b981'; 
         }
         
-        chrome.storage.local.set({ cacheInput: ttlValue }, function() {
+        browserAPI.storage.local.set({ cacheInput: ttlValue }, function() {
             console.log('Cache TTL saved:', ttlValue, 'minutes');
         });
     });
